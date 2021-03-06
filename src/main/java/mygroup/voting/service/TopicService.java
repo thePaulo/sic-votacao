@@ -10,6 +10,7 @@ import mygroup.voting.dao.TopicDao;
 import mygroup.voting.model.Topic;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,10 +37,12 @@ public class TopicService {
         this.topicDao = topicDao;
     }
 
+    @Cacheable("fetchPautaUnica")
     public Optional<Topic> getTopic(Long id){
         return topicDao.findById(id);
     }
 
+    @Cacheable("fetchPauta")
     public List<Topic> getTopics(){
         return topicDao.findAll();
     }

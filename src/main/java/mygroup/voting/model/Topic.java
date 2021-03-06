@@ -2,6 +2,7 @@ package mygroup.voting.model;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import java.time.LocalDateTime;
 
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
  */
 
 @Entity
-@Table
+@Table(indexes = @Index(columnList = "description"))
 public class Topic {
     @Id
     private Long id;

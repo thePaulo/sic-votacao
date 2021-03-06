@@ -4,6 +4,7 @@ import mygroup.voting.dao.VoteDao;
 import mygroup.voting.model.Topic;
 import mygroup.voting.model.Vote;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class VoteService {
         this.topicService = topicService;
     }
 
+    @Cacheable("fetchVotos")
     public List<Vote> getVotes(){
         return voteDao.findAll();
     }
@@ -69,6 +71,7 @@ public class VoteService {
      * 
      * @param associateId cpf do associado que está votando
      */
+    @Cacheable("fetchCPF")
     void fetchData(Long associateId){
         String response;
         try {
