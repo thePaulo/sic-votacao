@@ -3,11 +3,14 @@ package mygroup.voting.service;
 import mygroup.voting.dao.VoteDao;
 import mygroup.voting.model.Topic;
 import mygroup.voting.model.Vote;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -16,6 +19,8 @@ import java.util.Optional;
 
 @Service
 public class VoteService {
+
+    Logger logger = LoggerFactory.getLogger(TopicService.class);
     private final VoteDao voteDao;
     private final TopicService topicService;
 
@@ -38,19 +43,22 @@ public class VoteService {
     public void addNewVote(Vote vote) {
         Optional<Topic> topicOptional = topicService.getTopic(vote.getTopicId());
         if ( !topicOptional.isPresent()){ //caso a pauta não exista no sistema
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"This topic does not exist");
+            logger.error("Pauta não existente");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Esta pauta não existe");
         }
         fetchData(vote.getAssociateId()); //checagem em api externa dos dados sobre o cpf deste voto
 
 
         Optional<Vote> voteOptional = voteDao.findById(vote.getId());
         if ( voteOptional.isPresent()){
-            throw new IllegalStateException("vote id already taken");
+            logger.error("Este voto já foi cadastrado");
+            throw new IllegalStateException("Voto com este Id já foi registrado");
         }
 
         voteOptional = voteDao.findVoteByAssociateId(vote.getAssociateId());
         if ( voteOptional.isPresent()){
-            throw new IllegalStateException("associate has already voted");
+            logger.error("Associado já votou nesta pauta");
+            throw new IllegalStateException("Associado com voto já cadastrado para esta pauta");
         }
 
         voteDao.save(vote); //persistindo este voto
@@ -61,6 +69,7 @@ public class VoteService {
         }else{
             topicService.updateTopic(vote.getTopicId(),"",0,1);
         }
+        logger.info("Voto contabilizado na pauta");
 
     }
 
@@ -73,15 +82,23 @@ public class VoteService {
      */
     @Cacheable("fetchCPF")
     void fetchData(Long associateId){
-        String response;
+        String response="";
         try {
             response = new RestTemplate().getForObject("https://user-info.herokuapp.com/users/"+associateId, String.class);
-        }catch (Exception e){   //404 error
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Associate CPF wasn't found"); //caso este cpf não seja registrado na api = não é válido
+        }catch (HttpClientErrorException e){   
+            if( e.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR){ //Erro no serviço de API
+                logger.error("Não foi possível se comunicar com a API externa");    
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Não foi possível se comunicar com a API");
+            }
+            else{
+                logger.error("CPF não encontrado");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"CPF inválido"); //caso este cpf não seja registrado na api = não é válido    
+            }
         }
         if(response.equals("{\"status\":\"ABLE_TO_VOTE\"}"));
         else if(response.equals("{\"status\":\"UNABLE_TO_VOTE\"}")){ //caso este cpf está registrado na api porém não está permitido seu voto
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"associate with id: "+ associateId +" isn't allowed to vote");
+            logger.error("Associado não está permitido a votar");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Associado com id: "+ associateId +" não foi permitido o voto");
         }
     }
 

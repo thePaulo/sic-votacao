@@ -1,4 +1,4 @@
-package mygroup.voting.topicTests;
+package mygroup.voting.testsFolder;
 
 import mygroup.voting.model.Topic;
 import mygroup.voting.model.Vote;
@@ -16,7 +16,7 @@ import java.util.Optional;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
-public class VoteTest {
+public class VoteUnitTests {
     
     @Mock
     VoteService voteService;

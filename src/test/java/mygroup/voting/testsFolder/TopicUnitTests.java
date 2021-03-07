@@ -1,4 +1,4 @@
-package mygroup.voting.topicTests;
+package mygroup.voting.testsFolder;
 
 import mygroup.voting.model.Topic;
 import mygroup.voting.service.TopicService;
@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
-public class VotingTest {
+public class TopicUnitTests {
     
     @Mock
     private TopicService topicService;

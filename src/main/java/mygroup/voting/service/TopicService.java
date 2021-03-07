@@ -8,6 +8,8 @@ import com.rabbitmq.client.ConnectionFactory;
 import mygroup.voting.config.MessagingConfig;
 import mygroup.voting.dao.TopicDao;
 import mygroup.voting.model.Topic;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -26,6 +28,8 @@ import java.util.concurrent.TimeoutException;
 
 @Service
 public class TopicService {
+    
+    Logger logger = LoggerFactory.getLogger(TopicService.class);
 
     private final TopicDao topicDao;
 
@@ -55,18 +59,22 @@ public class TopicService {
     public void addNewTopic(Topic topic) {
         Optional<Topic> topicOptional = topicDao.findById(topic.getId());
         if ( topicOptional.isPresent()){
-            throw new IllegalStateException("topic with id " +topic.getId()+ " already exists"); //já há uma pauta registrada com esse id
+            logger.error("Pauta com id repetido");
+            throw new IllegalStateException("Pauta com id " +topic.getId()+ " já existe"); //já há uma pauta registrada com esse id
         }
         if(topic.getTimeLimit() == 0){ //caso não seja informado o tempo limite de expiração da pauta, 60s será setado
             topic.setTimeLimit(60);
         }
         topic.setCreation(LocalDateTime.now()); //data atual de criação da pauta
         topicDao.save(topic); //persistindo a pauta
+        logger.info("Pauta salva no sistema");
         
         try {
             sendMessage(topic); //usando serviço de mensageria para alertar quando a pauta for finalizada
+            logger.info("Mensagem de expiração de pauta submetida");
         }catch(Exception e){ //erro causado que será ou IOException ou TimeoutException
             System.out.println(e.getCause().getMessage());
+            logger.error("Erro no serviço de mensageria temporizada");
         }
     }
 
@@ -78,10 +86,13 @@ public class TopicService {
     public void deleteTopic(Long topicId) {
         boolean exists = topicDao.existsById(topicId);
         if (!exists){ //caso esta pauta esteja registrada no sistema
+            
+            logger.error("Pauta não registrada no sistema");
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "topic with id " + topicId + " does not exist"
+                    "Pauta com id " + topicId + " não existe"
             );
         }
+        logger.info("Pauta deletada");
         topicDao.deleteById(topicId); //removendo do banco esta pauta
     }
 
@@ -95,7 +106,7 @@ public class TopicService {
     @Transactional
     public void updateTopic(Long topicId, String description,int positive,int negative) {
         Topic topic = topicDao.findById(topicId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                "topic with id "+topicId+" does not exist"
+                "Pauta com id "+topicId+" não existe"
         ));//caso tópico não exista
         
         LocalDateTime now = LocalDateTime.now();
@@ -114,7 +125,8 @@ public class TopicService {
                 template.convertAndSend(MessagingConfig.EXCHANGE,MessagingConfig.ROUTING_KEY,topic); //serviço de mensageria a cada atualização da votação na pauta do sistema
             }
         }else{
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Error - Voting session has been timed out");// tempo de votação para esta pauta já foi expirado
+            logger.error("Votação nesta pauta já foi encerrada");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Erro - Sessão de votação já terminada");// tempo de votação para esta pauta já foi expirado
         }
     }
 
@@ -133,7 +145,7 @@ public class TopicService {
             
             //queue durable exclusive autodelete arguments
             channel.queueDeclare("myvoting_queue",true,false,false,null);
-            System.out.println("message sent...");            
+                        
             
             Map<String,Object> args = new HashMap<String,Object>();
             args.put("x-delayed-type","direct");
@@ -148,7 +160,8 @@ public class TopicService {
             channel.basicPublish("my_exchange","my_routingKey",props.build(),("Votação na pauta\n " +
                     topic.getId()+" com descrição: \n" +
                     topic.getDescription()+" foi encerrada").getBytes(StandardCharsets.UTF_8));
-            
+
+            logger.info("Serviço de mensageria com delay feito com sucesso");
         }
     }
 }
