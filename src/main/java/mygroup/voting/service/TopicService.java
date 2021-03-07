@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -41,12 +43,11 @@ public class TopicService {
         this.topicDao = topicDao;
     }
 
-    @Cacheable("fetchPautaUnica")
     public Optional<Topic> getTopic(Long id){
         return topicDao.findById(id);
     }
 
-    @Cacheable("fetchPauta")
+    @Cacheable(value="topics")
     public List<Topic> getTopics(){
         return topicDao.findAll();
     }
@@ -56,6 +57,7 @@ public class TopicService {
      * 
      * @param topic pauta a ser adicionada no sistema
      */
+    @CacheEvict(value="topics",allEntries = true)
     public void addNewTopic(Topic topic) {
         Optional<Topic> topicOptional = topicDao.findById(topic.getId());
         if ( topicOptional.isPresent()){
@@ -76,13 +78,15 @@ public class TopicService {
             System.out.println(e.getCause().getMessage());
             logger.error("Erro no serviço de mensageria temporizada");
         }
+        
     }
 
     /** deleção de uma pauta já registrada no sistema
      * 
      * @param topicId tópico da pauta
      */
-    
+
+    @CacheEvict(value="topics",allEntries = true)
     public void deleteTopic(Long topicId) {
         boolean exists = topicDao.existsById(topicId);
         if (!exists){ //caso esta pauta esteja registrada no sistema
@@ -103,6 +107,7 @@ public class TopicService {
      * @param positive quantidade de votos a favor da pauta
      * @param negative quantidade de votos contra a pauta
      */
+    @CacheEvict(value="topics",allEntries = true)
     @Transactional
     public void updateTopic(Long topicId, String description,int positive,int negative) {
         Topic topic = topicDao.findById(topicId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,

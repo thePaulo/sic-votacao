@@ -6,6 +6,7 @@ import mygroup.voting.model.Vote;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class VoteService {
         this.topicService = topicService;
     }
 
-    @Cacheable("fetchVotos")
+    @Cacheable(value="votes")
     public List<Vote> getVotes(){
         return voteDao.findAll();
     }
@@ -39,6 +40,7 @@ public class VoteService {
      * 
      * @param vote voto de uma pauta a ser validado e caso positivo, persistido no sistema
      */
+    @CacheEvict(value = "votes",allEntries = true)
     @Transactional
     public void addNewVote(Vote vote) {
         Optional<Topic> topicOptional = topicService.getTopic(vote.getTopicId());
@@ -80,7 +82,6 @@ public class VoteService {
      * 
      * @param associateId cpf do associado que está votando
      */
-    @Cacheable("fetchCPF")
     void fetchData(Long associateId){
         String response="";
         try {
