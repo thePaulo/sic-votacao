@@ -1,5 +1,7 @@
 package mygroup.voting.model;
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import javax.persistence.*;
 
 /**
@@ -8,6 +10,7 @@ import javax.persistence.*;
 
 @Entity
 @Table
+@org.hibernate.annotations.Cache(usage= CacheConcurrencyStrategy.READ_WRITE)
 public class Vote {
     @Id
     private Long id;

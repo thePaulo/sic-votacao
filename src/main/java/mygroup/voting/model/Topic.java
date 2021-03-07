@@ -1,5 +1,7 @@
 package mygroup.voting.model;
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Index;
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(indexes = @Index(columnList = "description"))
+@org.hibernate.annotations.Cache(usage= CacheConcurrencyStrategy.READ_WRITE)
 public class Topic {
     @Id
     private Long id;
