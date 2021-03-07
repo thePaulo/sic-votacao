@@ -20,7 +20,7 @@ public class Topic {
     private Long id;
     private String description; //descrição
     private LocalDateTime creation; //data de criação
-    private int timeLimit; //tempo limite em segundos
+    private int timeLimit = 60; //tempo limite em segundos
     private int positive; //votos a favor da pauta
     private int negative; //votos contra a pauta
 
