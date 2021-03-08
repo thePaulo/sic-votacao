@@ -31,7 +31,7 @@ public class VoteService {
         this.topicService = topicService;
     }
 
-    @Cacheable(value="votes")
+    
     public List<Vote> getVotes(){
         return voteDao.findAll();
     }
@@ -40,7 +40,7 @@ public class VoteService {
      * 
      * @param vote voto de uma pauta a ser validado e caso positivo, persistido no sistema
      */
-    @CacheEvict(value = "votes",allEntries = true)
+    
     @Transactional
     public void addNewVote(Vote vote) {
         Optional<Topic> topicOptional = topicService.getTopic(vote.getTopicId());

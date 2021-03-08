@@ -39,6 +39,18 @@ public class TopicController {
      *
      * @param topicId id da pauta a ser deletada
      */
+    @DeleteMapping(path="{Id}")
+    public void deleteTopic(@PathVariable("Id") Long topicId){
+        topicService.deleteTopic(topicId);
+    }
+
+    /** endpoint da api de pauta que cuida das requisições PUT e leva para a camada de serviços
+     *
+     * @param topicId   id da pauta a ser modificada
+     * @param description   (opcional) descrição a ser alterada 
+     * @param positive  (opcional) voto a favor de uma pauta
+     * @param negative (opcional) voto contra uma pauta
+     */
     @PutMapping(path="{Id}")
     public void updateTopic(@PathVariable("Id") Long topicId,
                             @RequestParam(required = false) String description,

@@ -5,15 +5,13 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import mygroup.voting.config.MessagingConfig;
 import mygroup.voting.dao.TopicDao;
+import mygroup.voting.dao.VoteDao;
 import mygroup.voting.model.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -34,13 +32,12 @@ public class TopicService {
     Logger logger = LoggerFactory.getLogger(TopicService.class);
 
     private final TopicDao topicDao;
+    private final VoteDao voteDao;
 
     @Autowired
-    private RabbitTemplate template;
-
-    @Autowired
-    public TopicService(TopicDao topicDao) {
+    public TopicService(TopicDao topicDao , VoteDao voteDao) {
         this.topicDao = topicDao;
+        this.voteDao = voteDao;
     }
 
     public Optional<Topic> getTopic(Long id){
@@ -72,7 +69,7 @@ public class TopicService {
         logger.info("Pauta salva no sistema");
         
         try {
-            sendMessage(topic); //usando serviço de mensageria para alertar quando a pauta for finalizada
+            sendDelayedMessage(topic); //usando serviço de mensageria para alertar quando a pauta for finalizada
             logger.info("Mensagem de expiração de pauta submetida");
         }catch(Exception e){ //erro causado que será ou IOException ou TimeoutException
             System.out.println(e.getCause().getMessage());
@@ -96,6 +93,8 @@ public class TopicService {
                     "Pauta com id " + topicId + " não existe"
             );
         }
+        voteDao.deleteVotesByTopicId(topicId);
+        
         logger.info("Pauta deletada");
         topicDao.deleteById(topicId); //removendo do banco esta pauta
     }
@@ -127,7 +126,12 @@ public class TopicService {
                 topic.setPositive(topic.getPositive()+positive);
                 topic.setNegative(topic.getNegative()+negative);
 
-                template.convertAndSend(MessagingConfig.EXCHANGE,MessagingConfig.ROUTING_KEY,topic); //serviço de mensageria a cada atualização da votação na pauta do sistema
+                try {
+                    sendNonDelayedMessage(topic); // serviço de mensageria alertando alteração numa pauta
+                }catch (Exception e){
+                    System.out.println(e.getCause().getMessage());
+                    logger.error("Erro no serviço de mensageria não temporizada");
+                }
             }
         }else{
             logger.error("Votação nesta pauta já foi encerrada");
@@ -142,31 +146,47 @@ public class TopicService {
      * @throws IOException erro causado neste caso normalmente se não for encontrado a fila especificada
      * @throws TimeoutException erro causado caso não esteja tendo conexão com o servidor do rabbitmq dentro de certo tempo
      */
-    public void sendMessage(Topic topic) throws IOException, TimeoutException {
+    public void sendDelayedMessage(Topic topic) throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         
         try(Connection connection = factory.newConnection()){
             Channel channel = connection.createChannel();
             
             //queue durable exclusive autodelete arguments
-            channel.queueDeclare("myvoting_queue",true,false,false,null);
+            channel.queueDeclare("my_delayed_voting_queue",true,false,false,null);
                         
             
             Map<String,Object> args = new HashMap<String,Object>();
             args.put("x-delayed-type","direct");
-            channel.exchangeDeclare("my_exchange","x-delayed-message",true,false,args);
+            channel.exchangeDeclare("my_delayed_exchange","x-delayed-message",true,false,args);
 
-            channel.queueBind("myvoting_queue","my_exchange","my_routingKey");
+            channel.queueBind("my_delayed_voting_queue","my_delayed_exchange","my_delayed_routingKey");
             
             Map<String,Object> headers = new HashMap<String,Object>();
             headers.put("x-delay",1000*topic.getTimeLimit());
             AMQP.BasicProperties.Builder props = new AMQP.BasicProperties.Builder().headers(headers);
             
-            channel.basicPublish("my_exchange","my_routingKey",props.build(),("Votação na pauta\n " +
+            channel.basicPublish("my_delayed_exchange","my_delayed_routingKey",props.build(),("Votação na pauta\n " +
                     topic.getId()+" com descrição: \n" +
                     topic.getDescription()+" foi encerrada").getBytes(StandardCharsets.UTF_8));
 
             logger.info("Serviço de mensageria com delay feito com sucesso");
+        }
+    }
+    
+    public void sendNonDelayedMessage(Topic topic) throws IOException, TimeoutException {
+        ConnectionFactory factory = new ConnectionFactory();
+
+        try(Connection connection = factory.newConnection()){
+            Channel channel = connection.createChannel();
+
+            channel.queueDeclare("myvoting_queue",true,false,false,null);
+
+            channel.basicPublish("", "myvoting_queue", null, (" pauta: "+
+                    topic.getId()+"\n está com "+topic.getPositive()+ " votos a favor e "+
+                    topic.getNegative()+ " votos contra").getBytes(StandardCharsets.UTF_8));
+
+            logger.info("Serviço de mensageria padrão feito com sucesso");
         }
     }
 }
