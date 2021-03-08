@@ -17,9 +17,9 @@ import java.util.Optional;
 @Repository
 public interface VoteDao extends JpaRepository<Vote, Long> {
 
-    @Query("SELECT v FROM Vote v WHERE v.associateId = ?1")
+    @Query("SELECT v FROM Vote v WHERE v.associateId = ?1 AND v.topicId = ?2")
     @QueryHints(@QueryHint(name=org.hibernate.annotations.QueryHints.CACHEABLE,value="true"))
-    Optional<Vote> findVoteByAssociateId(Long associateId);
+    Optional<Vote> findVoteByAssociateId(Long associateId,Long topicId);
     
     
     @Query(value="SELECT * FROM Vote v",nativeQuery = true)

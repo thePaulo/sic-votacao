@@ -57,7 +57,7 @@ public class VoteService {
             throw new IllegalStateException("Voto com este Id já foi registrado");
         }
 
-        voteOptional = voteDao.findVoteByAssociateId(vote.getAssociateId());
+        voteOptional = voteDao.findVoteByAssociateId(vote.getAssociateId(),vote.getTopicId());
         if ( voteOptional.isPresent()){
             logger.error("Associado já votou nesta pauta");
             throw new IllegalStateException("Associado com voto já cadastrado para esta pauta");
