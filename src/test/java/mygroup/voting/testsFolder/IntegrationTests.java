@@ -1,10 +1,27 @@
 package mygroup.voting.testsFolder;
 
+import mygroup.voting.dao.TopicDao;
+import mygroup.voting.model.Topic;
+import mygroup.voting.service.TopicService;
+import net.minidev.json.JSONObject;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 public class IntegrationTests {
-    /*
     private final RestTemplate restTemplate = new RestTemplate();
     private final JSONObject topicJsonObject = new JSONObject();
     HttpHeaders headers = new HttpHeaders();
@@ -23,19 +40,14 @@ public class IntegrationTests {
 
     @Test
     void testDescription(){
-        Topic topic = new Topic("A boring topic",10,99L);
-
-        when(topicDao.findById(99L)).thenReturn(java.util.Optional.of(topic));
-
-        Optional<Topic> t = topicService.getTopic(99L);
-        assertEquals(t.get().getDescription(),
-                topic.getDescription());
+        Optional<Topic> topic = topicService.getTopic(99L);
+        assertEquals(topic.get().getDescription(),"Nova Pauta");
     }
 
     @Test
     void testTopicCreation() throws Exception{
 
-        topicJsonObject.put("description","New Topic");
+        topicJsonObject.put("description","Nova Pauta");
         topicJsonObject.put("id",99);
 
         HttpEntity<String> request = new HttpEntity<String>(topicJsonObject.toString(),headers);
@@ -61,7 +73,7 @@ public class IntegrationTests {
 
     @Test
     void testSessionExpiration() throws Exception{
-        topicJsonObject.put("description","Expiration");
+        topicJsonObject.put("description","Sessão expirada");
         topicJsonObject.put("id",77);
         topicJsonObject.put("timeLimit",1);
 
@@ -101,5 +113,4 @@ public class IntegrationTests {
         assertEquals(HttpStatus.BAD_REQUEST,e.getStatusCode());
     }
 
-    */
 }
