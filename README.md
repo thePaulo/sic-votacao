@@ -85,8 +85,6 @@ O "id" representa o id do voto, o "topicId" representa o id da pauta, o "associa
 
 As informações sobre todos os votos e pautas do sistema estão disponíveis após cadastrados nas urls e são verificáveis com um `request GET`.
 
-Também é possível deletar pautas utilizando um `request DELETE` especificando o id da pauta como na url: ... api/v1/topic/1
-
 # Sobre a implementação
 
 ## Busca de CPFs válidos
@@ -101,7 +99,7 @@ Ps: Eu poderia ter colocado uma Thread separada que iria aguardar o fim da pauta
 
 ## Performace
 
-Foi utilizado "cacheamento" ou caching nesse sistema, em diferentes níveis de abstração, No 1º nível, é utilizado caching de forma que as requisições na minha camada de serviços irão fazer a busca no meu banco apenas a 1ª vez ( até que haja algum dado adicionado ou deletado ou alterado para evitar que os dados mantidos na cache estejam desatualizados, aí então haverá uma nova requisição ao banco )
+Foi utilizado "cacheamento" ou caching nesse sistema, em diferentes níveis de abstração, No 1º nível, é utilizado caching de forma que as requisições na minha camada de serviços irão fazer a busca no meu banco apenas a 1ª vez ( até que haja algum dado adicionado para evitar que os dados mantidos na cache estejam desatualizados, aí então haverá uma nova requisição ao banco )
 
 No 2º nível de caching, as entidades específicas também serão mantidas em memória na cache para que caso sejam requisitadas mais de 1 vez, não há necessidade de busca no banco
 
