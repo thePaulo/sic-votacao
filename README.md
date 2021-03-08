@@ -111,15 +111,15 @@ Os resultados de performace podem ser vistos nos testes pelas imagens ao se util
 
 ### Rodando localmente com 1 milhão de usuários simultâneos fazendo 1 requisição no sistema ( 1 milhão de requisições )
 Para um teste de resposta em 10ms - 13% das requisições passaram
-![alt text](https://github.com/thePaulo/sic-votacao/blob/main/1kk.png?raw=true)
+![alt text](https://raw.githubusercontent.com/thePaulo/sic-votacao/master/1kk.png)
 
 ### Rodando localmente com 10 mil usuários simultâneos fazendo 1000 requisições no sistema ( 10 milhões de requisições )
 Para um teste de resposta em 500ms - 66% das requições passaram
-![alt text](https://github.com/thePaulo/sic-votacao/blob/main/10kk.png?raw=true)
+![alt text](https://raw.githubusercontent.com/thePaulo/sic-votacao/master/10kk.png)
 
 ### Rodando remotamente com 1000 usuários simultâneos fazendo 10 requisições no sistema ( 10 mil requisições )
 Para um teste de resposta em 500ms - 60% das requisições passaram
-![alt text](https://github.com/thePaulo/sic-votacao/blob/main/10k.png?raw=true)
+![alt text](https://raw.githubusercontent.com/thePaulo/sic-votacao/master/10k.png)
 
 ## Versionamento da API
 
